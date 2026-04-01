@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3468/3468379.png">
+<title>HappyBirthdayNina</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+#stage {
+  width:100%; min-height:750px; background:#000;
+  position:relative; overflow:hidden;
+  display:flex; flex-direction:column;
+  align-items:center; padding-top:60px;
+}
+
+#greeting {
+  font-family:'Pacifico',cursive;
+  font-size:28px; color:#fff;
+  opacity:0; transition:opacity 2.5s;
+  z-index:10;
+}
+
+#photo-frame {
+  width:160px; height:160px;
+  border-radius:50%; overflow:hidden;
+  margin-top:20px;
+  opacity:0; transition:opacity 2s;
+  z-index:10;
+}
+#photo-frame img { width:100%; height:100%; object-fit:cover; }
+
+#tulip-field {
+  position:absolute; bottom:0;
+  width:100%; height:260px;
+}
+
+.tulip {
+  position:absolute; bottom:0;
+  transform-origin:bottom center;
+  transition:all 1.5s cubic-bezier(0.22,1,0.36,1);
+}
+
+.tulip.clickable { cursor:pointer; }
+
+.bloom-el {
+  position:absolute;
+  border-radius:50%;
+  transition:0.4s;
+}
+
+#hint {
+  position:absolute; bottom:270px;
+  color:#fff6; opacity:0;
+  transition:1s;
+}
+
+#overlay {
+  display:none; position:absolute; inset:0;
+  background:#0008; justify-content:center; align-items:center;
+}
+#overlay.show { display:flex; }
+
+#card {
+  background:#fff; padding:24px;
+  margin-top: 30px;
+  border-radius:14px; text-align:center;
+}
+
+
+
+
+
+
+#card {
+  background:#fff; border-radius:18px;
+  padding:32px 28px 24px; max-width:320px; width:95%;
+  margin-top: 30px;
+  text-align:center; position:relative;
+  animation: popIn 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes popIn {
+  from { transform:scale(0.7); opacity:0; }
+  to   { transform:scale(1);   opacity:1; }
+}
+#card-title {
+  font-size:13px; color:#ec4899; font-weight:500;
+  letter-spacing:0.05em; margin-bottom:12px;
+  font-family:var(--font-sans);
+}
+#card-msg {
+  font-size:20px; font-weight:500; color:#1a1a1a;
+  font-family:var(--font-sans); line-height:1.5;
+}
+#card-close {
+  margin-top:20px; background:#f9a8d4; color:#7c1d4a;
+  border:none; border-radius:10px; padding:8px 24px;
+  font-size:14px; cursor:pointer; font-family:var(--font-sans);
+  font-weight:500;
+}
+#card-close:hover { background:#f472b6; }
+#restart-btn {
+  position:absolute; top:12px; right:12px;
+  background:#ffffff18; color:#fff;
+  border:0.5px solid #ffffff33; border-radius:8px;
+  padding:5px 12px; font-size:11px; cursor:pointer;
+  font-family:var(--font-sans); z-index:20;
+}
+#restart-btn:hover { background:#ffffff28; }
+#hint {
+  position:absolute; bottom:270px; left:50%;
+  transform:translateX(-50%);
+  color:#ffffff55; font-size:12px; font-family:var(--font-sans);
+  z-index:10; white-space:nowrap; opacity:0;
+  transition:opacity 1s ease;
+  pointer-events:none;
+}
+#fast-btn {
+  position:absolute; top:12px; right:90px;
+  background:#ffffff18; color:#fff;
+  border:0.5px solid #ffffff33; border-radius:8px;
+  padding:5px 12px; font-size:11px; cursor:pointer;
+  z-index:20;
+}
+#fast-btn:hover { background:#ffffff28; }
+</style>
+</head>
+
+<body>
+
+<div id="stage">
+  <button id="fast-btn" onclick="startFast()">⏩</button>
+
+  <div id="greeting">Happy birthday,Nina</div>
+
+  <div id="photo-frame">
+    <img src="nina_aroundFlower.jpg">
+  </div>
+
+  <div id="tulip-field"></div>
+  <div id="hint">🌷 クリックしてね</div>
+
+  <div id="overlay">
+    <div id="card">
+      <div id="card-title"></div>
+      <div id="card-msg"></div>
+      <button onclick="closeCard()" id="card-close">次へ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MESSAGES = [
+  'まじめなところ',
+  '世界で一番かわいいところ',
+  '信じられないユーモアのセンスがあるところ...',
+  '自身満々なところ',
+  '夢に向かって頑張ってるところ',
+  '中目黒の交差点でみつけてくれるところ',
+  'widmerをハートで埋め尽くしちゃうところ',
+  '思ったことなんでも言っちゃうところ',
+  '人に真剣に向き合うところ',
+  '理想が高いところ（いいことだよ）',
+  'おしゃれなところ',
+  '部屋を綺麗にしてるところ',
+  '秀陽君が作った料理を美味しそうに食べてくれるところ',
+  '色に厳しいところ',
+  '変なジョークで笑ってくれるところ',
+  '好きなものを語るときキラキラしてるところ',
+  'たまに甘えてくるところ',
+  '存在だけでこっちまで幸せになるところ',
+  'マシンガントークしててもついつい聞いちゃうところ（これはおれのいいところ？）',
+  'トロントのおしゃれなレストランたくさん知ってるところ',
+  'なんだかんだ笑わせてくるところ',
+  '人の生き方にも真剣にアドバイスしてくれるところ',
+  '寝るまで電話しちゃうところ',
+  '道歩いてるだけで楽しいところ',
+  'こっちまでおしゃれにしてくれるところ',
+  '足折ったら心配してくれるところ'
+
+
+  
+];
+
+const COLORS = [
+'#e8536a','#f472b6','#fb923c','#facc15','#a78bfa','#f9a8d4'
+];
+
+const TOTAL = 26;
+const GRAY = '#555';
+
+let tulips = [];
+let used = [];
+let current = -1;
+let mode = "bouquet";
+let isFast = false;
+
+/* 🌷作成 */
+function createTulip() {
+  const t = document.createElement('div');
+  t.className='tulip';
+
+   const color = COLORS[Math.floor(Math.random()*COLORS.length)];
+
+  const h = 110 + Math.random()*80;
+
+  const stem = document.createElement('div');
+  stem.style.cssText = `
+    width:4px;height:${h}px;background:#4a7c3f;
+    position:absolute;bottom:0;left:50%;
+    transform:translateX(-50%);
+  `;
+
+  const bloom = document.createElement('div');
+  bloom.className='bloom-el';
+  bloom.style.cssText = `
+    width:26px;height:34px;
+    background:${color};
+    bottom:${h}px;
+    left:50%;transform:translateX(-50%);
+  `;
+
+  t.appendChild(stem);
+  t.appendChild(bloom);
+
+  t._bloom = bloom;
+  return t;
+}
+
+/* 🌷花束 */
+function buildBouquet() {
+  const firstmsg = document.createElement('p');
+  firstmsg.textContent ="Ninaちゃんのいいところ花束";
+  stage.appendChild(firstmsg);
+
+  const field = document.getElementById('tulip-field');
+  field.innerHTML='';
+  tulips=[];
+
+  const center = window.innerWidth/2;
+
+  for(let i=0;i<TOTAL;i++){
+    const el = createTulip();
+
+    const x = center + (Math.random()*80-40);
+    const y = Math.random()*30;
+    const r = Math.random()*20-10;
+
+    el.style.left = x+'px';
+    el.style.transform = `translateY(${y}px) rotate(${r}deg)`;
+
+    field.appendChild(el);
+    tulips.push(el);
+  }
+
+  field.onmouseenter = scatter;
+}
+
+/* 🌷散る */
+function scatter(){
+  if(mode!=="bouquet") return;
+  mode="scatter";
+
+  const margin=20;
+  const spacing=(window.innerWidth-margin*2)/(TOTAL-1);
+
+  tulips.forEach((el,i)=>{
+    el.style.left = margin + spacing*i + 'px';
+    el.style.transform='translateY(0) rotate(0deg)';
+  });
+
+  setTimeout(()=>{
+    resetGame();
+    startMain();
+  },1500);
+}
+
+/* 🌷ゲーム初期化 */
+function resetGame(){
+  used=[];
+  tulips.forEach(el=>{
+    el._bloom.style.background=GRAY;
+    el.onclick=null;
+    el.classList.remove('clickable');
+  });
+}
+
+/* 🌷開始 */
+function startMain(){
+  document.getElementById('greeting').style.opacity=1;
+
+  setTimeout(()=>{
+    document.getElementById('photo-frame').style.opacity=1;
+  },1500);
+
+  setTimeout(()=>{
+    document.getElementById('hint').style.opacity=1;
+    activate(randomTulip());
+  },2500);
+}
+
+function randomTulip(){
+  let i;
+  do{ i=Math.floor(Math.random()*TOTAL); }
+  while(used.includes(i));
+  return i;
+}
+
+/* 🌷アクティブ */
+function activate(i){
+  current=i;
+  tulips[i]._bloom.style.background =
+    COLORS[Math.floor(Math.random()*COLORS.length)];
+
+  tulips[i].classList.add('clickable');
+  tulips[i].onclick = ()=>openCard(i);
+}
+
+/* 💬 */
+function openCard(i){
+　const firstmsg = document.createElement('div');
+  firstmsg.textContent ="Ninaちゃんのいいところ";
+  document.getElementById('card-title').appendChild(firstmsg);
+  document.getElementById('card-msg').textContent =
+    MESSAGES[used.length] || '...';
+
+  used.push(i);
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeCard(){
+  document.getElementById('overlay').classList.remove('show');
+
+  if(used.length < MESSAGES.length){
+    activate(randomTulip());
+  }
+}
+
+/* ⏩ */
+function startFast(){
+  if(isFast) return;
+  isFast=true;
+
+  function loop(){
+    if(used.length >= MESSAGES.length) return;
+
+    openCard(current);
+    setTimeout(()=>{
+      closeCard();
+      setTimeout(loop,200);
+    },300);
+  }
+
+  loop();
+}
+
+/* 🚀 */
+function init(){
+  mode="bouquet";
+  isFast=false;
+
+  document.getElementById('greeting').style.opacity=0;
+  document.getElementById('photo-frame').style.opacity=0;
+  document.getElementById('hint').style.opacity=0;
+
+  buildBouquet();
+}
+
+window.onload = init;
+</script>
+
+</body>
+</html>
